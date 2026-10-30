@@ -1,0 +1,22 @@
+Дата проверки: 30 октября 2026 года
+Репозиторий: https://github.com/dd9272917/applied-is-project-2026
+
+Команда: node scripts/labs-db.cjs --setup
+Учебная база создана.
+Заказ: 3
+Заказчик: 3
+Макет: 3
+Материал: 3
+Оплата: 3
+Позиция_заказа: 3
+Расход_материала: 3
+Сотрудник: 3
+Услуга: 3
+PASS: 9 таблиц, 27 строк, 9 внешних ключей; ограничения и суммы корректны.
+
+Команда: node --test tests/auth.test.cjs
+PASS: password hashing rejects wrong and malformed hashes
+PASS: login, protected routes, session, author binding and logout
+tests 2; pass 2; fail 0
+
+Это текстовый протокол фактического запуска, не скриншот SSMS.
