@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Услуги — АРМ Фотоцентр</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/workspace.css">
+</head>
+<body>
+<div class="app-shell" id="app-shell"></div>
+
+<div class="modal-backdrop hidden" id="modalBackdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Новая услуга</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <form id="serviceForm">
+      <div class="modal-body">
+        <input type="hidden" name="id">
+        <div class="form-group">
+          <label>Название *</label>
+          <input type="text" name="Название" placeholder="Печать фото 10x15">
+          <div class="field-error"></div>
+        </div>
+        <div class="form-group">
+          <label>Тип *</label>
+          <select name="Тип">
+            <option>Фотопечать</option>
+            <option>Печать документов</option>
+            <option>Дизайн</option>
+            <option>Изготовление продукции</option>
+          </select>
+          <div class="field-error"></div>
+        </div>
+        <div class="form-group">
+          <label>Цена, ₸ *</label>
+          <input type="number" name="Цена" min="0" step="0.01" placeholder="15.00">
+          <div class="field-error"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal()">Отмена</button>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+renderShell('services.html', 'Каталог услуг');
+let services = [];
+
+async function load() {
+  const content = document.getElementById('page-content');
+  content.innerHTML = '<div class="empty-state">Загрузка…</div>';
+  try {
+    services = await Api.get('/api/services');
+    render();
+  } catch (e) {
+    content.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function serviceTypeKey(type) {
+  return String(type ?? '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('ru-RU');
+}
+
+function serviceTypeLabel(type) {
+  const key = serviceTypeKey(type);
+  const labels = {
+    'дизайн': 'Дизайн',
+    'фотопечать': 'Фотопечать',
+    'печать документов': 'Печать документов',
+    'изготовление продукции': 'Изготовление продукции'
+  };
+  return Object.hasOwn(labels, key) ? labels[key] : (key ? key[0].toLocaleUpperCase('ru-RU') + key.slice(1) : 'Без категории');
+}
+
+function render() {
+  const content = document.getElementById('page-content');
+  const groups = Object.create(null);
+  services.forEach(s => { (groups[serviceTypeKey(s.Тип)] ||= []).push(s); });
+
+  const cards = Object.entries(groups).map(([type, items]) => `
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><h2>${escapeHtml(serviceTypeLabel(type))}</h2></div>
+      <table>
+        <thead><tr><th>Название</th><th>Цена</th><th></th></tr></thead>
+        <tbody>
+          ${items.map(s => `
+            <tr>
+              <td>${escapeHtml(s.Название)}</td>
+              <td class="num">${money(s.Цена)}</td>
+              <td class="actions">
+                <button class="btn btn-sm" onclick='openModal(${escapeHtml(JSON.stringify(s))})'>Изменить</button>
+                <button class="btn btn-sm btn-danger" onclick="remove(${s.ID_Услуги})">Удалить</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`).join('');
+
+  content.innerHTML = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+      <button class="btn btn-primary" onclick="openModal()">+ Новая услуга</button>
+    </div>
+    ${cards || '<div class="empty-state">Услуги не добавлены</div>'}
+  `;
+}
+
+function openModal(s) {
+  const form = document.getElementById('serviceForm');
+  form.reset();
+  showFieldErrors(form, null);
+  document.getElementById('modalTitle').textContent = s ? 'Изменить услугу' : 'Новая услуга';
+  form.elements.namedItem('id').value = s ? s.ID_Услуги : '';
+  if (s) {
+    form.Название.value = s.Название;
+    const type = Array.from(form.Тип.options).find(option => serviceTypeKey(option.value) === serviceTypeKey(s.Тип));
+    if (type) form.Тип.value = type.value;
+    else {
+      const label = serviceTypeLabel(s.Тип);
+      form.Тип.add(new Option(label, label));
+      form.Тип.value = label;
+    }
+    form.Цена.value = s.Цена;
+  }
+  document.getElementById('modalBackdrop').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modalBackdrop').classList.add('hidden'); }
+
+document.getElementById('serviceForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const id = form.elements.namedItem('id').value;
+  const payload = { Название: form.Название.value.trim(), Тип: form.Тип.value, Цена: form.Цена.value };
+  try {
+    if (id) await Api.put('/api/services/' + id, payload);
+    else await Api.post('/api/services', payload);
+    toast(id ? 'Услуга обновлена' : 'Услуга добавлена');
+    closeModal();
+    load();
+  } catch (err) {
+    if (err.fields) showFieldErrors(form, err.fields);
+    else toast(err.message, 'error');
+  }
+});
+
+async function remove(id) {
+  if (!confirm('Удалить услугу?')) return;
+  try {
+    await Api.del('/api/services/' + id);
+    toast('Услуга удалена');
+    load();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+load();
+</script>
+</body>
+</html>
+

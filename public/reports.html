@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Отчёты — Фотоцентр</title><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/workspace.css"></head>
+<body><div class="app-shell" id="app-shell"></div>
+<template id="reports-template">
+<section class="card card-pad report-controls">
+<form id="reportForm"><div class="report-filters">
+<div class="form-group"><label for="reportStart">Дата начала</label><input type="date" id="reportStart" required></div>
+<div class="form-group"><label for="reportEnd">Дата окончания</label><input type="date" id="reportEnd" required></div>
+<div class="form-group"><label for="reportStatus">Статус заказа</label><select id="reportStatus"><option value="">Все статусы</option><option>Новый</option><option>В дизайне</option><option>В печати</option><option>Готов</option><option>Выдан</option></select></div>
+<button type="submit" class="btn btn-primary" id="generateReport">Сформировать отчёт</button>
+<button type="button" class="btn" id="printReport" disabled>Печать / PDF</button>
+</div><p class="report-hint">Период включительно, по дате создания заказа. Оплаты — за всё время по выбранным заказам, а не выручка за период.</p></form>
+</section>
+<div id="reportMessage" role="status" aria-live="polite"></div>
+<section id="reportResult" class="report-result" aria-label="Сформированный отчёт"><div class="card empty-state">Выберите период и нажмите «Сформировать отчёт».</div></section>
+</template>
+<script src="js/api.js"></script><script src="js/nav.js"></script><script src="js/reports.js"></script>
+</body></html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Карточка заказа — АРМ Фотоцентр</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/workspace.css">
+</head>
+<body>
+<div class="app-shell" id="app-shell"></div>
+
+<!-- Модалка: добавить позицию (услугу) -->
+<div class="modal-backdrop hidden" id="posBackdrop">
+  <div class="modal">
+    <div class="modal-header"><h2>Добавить услугу</h2><button class="modal-close" onclick="closeModal('posBackdrop')">&times;</button></div>
+    <form id="posForm">
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Услуга *</label>
+          <select name="ID_Услуги" id="serviceSelect"></select>
+          <div class="field-error"></div>
+        </div>
+        <div class="form-group">
+          <label>Количество *</label>
+          <input type="number" name="Количество" min="1" step="1" value="1">
+          <div class="field-error"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('posBackdrop')">Отмена</button>
+        <button type="submit" class="btn btn-primary">Добавить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Модалка: списать материал на позицию -->
+<div class="modal-backdrop hidden" id="matBackdrop">
+  <div class="modal">
+    <div class="modal-header"><h2>Списать материал</h2><button class="modal-close" onclick="closeModal('matBackdrop')">&times;</button></div>
+    <form id="matForm">
+      <input type="hidden" name="posId">
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Материал *</label>
+          <select name="ID_Материала" id="materialSelect"></select>
+          <div class="field-error"></div>
+        </div>
+        <div class="form-group">
+          <label>Количество *</label>
+          <input type="number" name="Количество" min="0.01" step="0.01">
+          <div class="field-error"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('matBackdrop')">Отмена</button>
+        <button type="submit" class="btn btn-primary">Списать</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Модалка: оплата -->
+<div class="modal-backdrop hidden" id="payBackdrop">
+  <div class="modal">
+    <div class="modal-header"><h2>Добавить оплату</h2><button class="modal-close" onclick="closeModal('payBackdrop')">&times;</button></div>
+    <form id="payForm">
+      <div class="modal-body">
+        <p class="text-muted mt-0" id="remainingText"></p>
+        <div class="form-group">
+          <label>Сумма, ₸ *</label>
+          <input type="number" name="Сумма" min="0.01" step="0.01">
+          <div class="field-error"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Тип *</label>
+            <select name="Тип">
+              <option>Предоплата</option>
+              <option>Частичная</option>
+              <option>Полная</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Способ *</label>
+            <select name="Способ">
+              <option>Наличные</option>
+              <option>Карта</option>
+              <option>Перевод</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('payBackdrop')">Отмена</button>
+        <button type="submit" class="btn btn-primary">Провести оплату</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Модалка: добавить макет -->
+<div class="modal-backdrop hidden" id="layoutBackdrop">
+  <div class="modal">
+    <div class="modal-header"><h2>Добавить макет</h2><button class="modal-close" onclick="closeModal('layoutBackdrop')">&times;</button></div>
+    <form id="layoutForm">
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Дизайнер *</label>
+          <select name="ID_Дизайнера" id="designerSelect"></select>
+          <div class="field-error"></div>
+        </div>
+        <div class="form-group">
+          <label>Файл макета</label>
+          <input type="text" name="ФайлМакета" placeholder="banner_v1.psd">
+          <div class="hint">В прототипе указывается только имя файла, без загрузки.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('layoutBackdrop')">Отмена</button>
+        <button type="submit" class="btn btn-primary">Добавить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+renderShell('orders.html', 'Карточка заказа');
+const orderId = new URLSearchParams(location.search).get('id');
+const STATUSES = ['Новый', 'В дизайне', 'В печати', 'Готов', 'Выдан'];
+const LAYOUT_STATUSES = ['В работе', 'На согласовании', 'Утверждён'];
+let detail = null;
+let services = [], materials = [], staff = [];
+
+async function load() {
+  const content = document.getElementById('page-content');
+  if (!orderId) { content.innerHTML = '<div class="alert alert-error">Не указан идентификатор заказа</div>'; return; }
+  content.innerHTML = '<div class="empty-state">Загрузка…</div>';
+  try {
+    [detail, services, materials, staff] = await Promise.all([
+      Api.get('/api/orders/' + orderId),
+      Api.get('/api/services'),
+      Api.get('/api/materials'),
+      Api.get('/api/staff')
+    ]);
+    render();
+  } catch (e) {
+    content.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function render() {
+  const { order, positions, materials: usedMaterials, payments, layouts } = detail;
+  const title = `Заказ № ${order.ID_Заказа}`;
+  document.querySelector('.page-heading h1').textContent = title;
+  document.querySelector('.breadcrumb strong').textContent = title;
+  document.title = `${title} — Фотоцентр`;
+
+  const paid = payments.reduce((s, p) => s + Number(p.Сумма), 0);
+  const remaining = Number(order.Сумма) - paid;
+
+  const statusOptions = STATUSES.map(s => `<option value="${s}" ${s === order.Статус ? 'selected' : ''}>${s}</option>`).join('');
+
+  const positionsRows = positions.length ? positions.map(p => {
+    const posMaterials = usedMaterials.filter(m => m.ID_Позиции === p.ID_Позиции);
+    const matList = posMaterials.length
+      ? posMaterials.map(m => `
+          <div class="summary-row">
+            <span>${escapeHtml(m.Материал)}: ${m.Количество} ${escapeHtml(m.ЕдиницаИзм)}</span>
+            <button class="btn btn-sm btn-danger" onclick="removeMaterial(${m.ID_Расхода})">Вернуть</button>
+          </div>`).join('')
+      : '<div class="text-muted" style="padding:4px 0;">Материалы не списаны</div>';
+    return `
+      <tr>
+        <td>
+          <div>${escapeHtml(p.Услуга)}</div>
+          <div class="text-muted" style="font-size:12px;">${escapeHtml(p.Тип)}</div>
+        </td>
+        <td class="num">${p.Количество}</td>
+        <td class="num">${money(p.Стоимость)}</td>
+        <td class="actions">
+          <button class="btn btn-sm" onclick="openMatModal(${p.ID_Позиции})">+ Материал</button>
+          <button class="btn btn-sm btn-danger" onclick="removePosition(${p.ID_Позиции})">Удалить</button>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="4" style="padding-top:0;background:#FAFAFB;">${matList}</td>
+      </tr>`;
+  }).join('') : '';
+
+  const paymentsRows = payments.length ? payments.map(p => `
+    <tr><td>${formatDate(p.Дата)}</td><td>${escapeHtml(p.Тип)}</td><td>${escapeHtml(p.Способ)}</td><td class="num">${money(p.Сумма)}</td></tr>
+  `).join('') : '<tr><td colspan="4" class="text-muted">Оплат ещё не было</td></tr>';
+
+  const layoutsRows = layouts.length ? layouts.map(l => `
+    <tr>
+      <td>${escapeHtml(l.ФайлМакета || '—')}</td>
+      <td>${escapeHtml(l.Дизайнер)}</td>
+      <td>
+        <select onchange="changeLayoutStatus(${l.ID_Макета}, this.value)">
+          ${LAYOUT_STATUSES.map(s => `<option ${s === l.Статус ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="3" class="text-muted">Макеты не добавлены</td></tr>';
+
+  document.getElementById('page-content').innerHTML = `
+    <div class="order-grid">
+      <div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header"><h2>Заказчик</h2></div>
+          <div class="card-pad">
+            <div class="summary-row"><span>ФИО</span><span>${escapeHtml(order.Заказчик_ФИО)}</span></div>
+            <div class="summary-row"><span>Телефон</span><span>${escapeHtml(order.Заказчик_Телефон || '—')}</span></div>
+            <div class="summary-row"><span>Email</span><span>${escapeHtml(order.Заказчик_Email || '—')}</span></div>
+            <div class="summary-row"><span>Оформил</span><span>${escapeHtml(order.Сотрудник_ФИО)}</span></div>
+            <div class="summary-row"><span>Создан</span><span>${formatDate(order.ДатаСоздания)}</span></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header"><h2>Позиции заказа</h2><button class="btn btn-sm btn-primary" onclick="openModal('posBackdrop')">+ Услуга</button></div>
+          ${positions.length ? `<table><thead><tr><th>Услуга</th><th>Кол-во</th><th>Стоимость</th><th></th></tr></thead><tbody>${positionsRows}</tbody></table>` : '<div class="empty-state">Услуги ещё не добавлены</div>'}
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header"><h2>Макеты</h2><button class="btn btn-sm btn-primary" onclick="openLayoutModal()">+ Макет</button></div>
+          <table><thead><tr><th>Файл</th><th>Дизайнер</th><th>Статус</th></tr></thead><tbody>${layoutsRows}</tbody></table>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>История оплат</h2></div>
+          <table><thead><tr><th>Дата</th><th>Тип</th><th>Способ</th><th>Сумма</th></tr></thead><tbody>${paymentsRows}</tbody></table>
+        </div>
+      </div>
+
+      <div class="card summary-card">
+        <div class="card-header"><h2>Итог по заказу</h2></div>
+        <div class="card-pad">
+          <div class="form-group">
+            <label>Статус заказа</label>
+            <select id="statusSelect">${statusOptions}</select>
+          </div>
+          <div class="summary-row"><span>Сумма заказа</span><span>${money(order.Сумма)}</span></div>
+          <div class="summary-row"><span>Оплачено</span><span>${money(paid)}</span></div>
+          <div class="summary-row total"><span>Остаток к оплате</span><span>${money(remaining)}</span></div>
+          <button class="btn btn-primary" style="width:100%;margin-top:14px;" ${remaining <= 0 ? 'disabled' : ''} onclick="openPayModal(${remaining})">Внести оплату</button>
+          <button class="btn btn-danger" style="width:100%;margin-top:10px;" onclick="deleteOrder()">Удалить заказ</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('statusSelect').addEventListener('change', changeStatus);
+}
+
+async function changeStatus(e) {
+  try {
+    await Api.patch(`/api/orders/${orderId}/status`, { Статус: e.target.value });
+    toast('Статус заказа обновлён');
+    load();
+  } catch (err) {
+    toast(err.message, 'error');
+    load();
+  }
+}
+
+// ---------- Позиции ----------
+function openModal(id) {
+  document.getElementById('serviceSelect').innerHTML = services.map(s => `<option value="${s.ID_Услуги}">${escapeHtml(s.Название)} — ${money(s.Цена)}</option>`).join('');
+  document.getElementById(id).classList.remove('hidden');
+}
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+document.getElementById('posForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  try {
+    await Api.post(`/api/orders/${orderId}/positions`, {
+      ID_Услуги: form.ID_Услуги.value, Количество: form.Количество.value
+    });
+    toast('Услуга добавлена в заказ');
+    closeModal('posBackdrop');
+    form.reset();
+    load();
+  } catch (err) {
+    if (err.fields) showFieldErrors(form, err.fields);
+    else toast(err.message, 'error');
+  }
+});
+
+async function removePosition(posId) {
+  if (!confirm('Удалить позицию из заказа? Списанные на неё материалы вернутся на склад.')) return;
+  try {
+    await Api.del(`/api/orders/${orderId}/positions/${posId}`);
+    toast('Позиция удалена');
+    load();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ---------- Материалы ----------
+function openMatModal(posId) {
+  document.getElementById('materialSelect').innerHTML = materials.map(m => `<option value="${m.ID_Материала}">${escapeHtml(m.Название)} (остаток: ${m.Остаток} ${escapeHtml(m.ЕдиницаИзм)})</option>`).join('');
+  document.getElementById('matForm').posId.value = posId;
+  openModal('matBackdrop');
+}
+
+document.getElementById('matForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  try {
+    await Api.post(`/api/orders/${orderId}/positions/${form.posId.value}/materials`, {
+      ID_Материала: form.ID_Материала.value, Количество: form.Количество.value
+    });
+    toast('Материал списан');
+    closeModal('matBackdrop');
+    form.reset();
+    load();
+  } catch (err) {
+    if (err.fields) showFieldErrors(form, err.fields);
+    else toast(err.message, 'error');
+  }
+});
+
+async function removeMaterial(rid) {
+  if (!confirm('Вернуть материал на склад?')) return;
+  try {
+    await Api.del(`/api/orders/materials/${rid}`);
+    toast('Материал возвращён на склад');
+    load();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ---------- Оплата ----------
+function openPayModal(remaining) {
+  const form = document.getElementById('payForm');
+  form.reset();
+  showFieldErrors(form, null);
+  document.getElementById('remainingText').textContent = `Остаток к оплате: ${money(remaining)}`;
+  openModal('payBackdrop');
+}
+
+document.getElementById('payForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  try {
+    await Api.post(`/api/orders/${orderId}/payments`, {
+      Сумма: form.Сумма.value, Тип: form.Тип.value, Способ: form.Способ.value
+    });
+    toast('Оплата проведена');
+    closeModal('payBackdrop');
+    form.reset();
+    load();
+  } catch (err) {
+    if (err.fields) showFieldErrors(form, err.fields);
+    else toast(err.message, 'error');
+  }
+});
+
+// ---------- Макеты ----------
+function openLayoutModal() {
+  document.getElementById('designerSelect').innerHTML = staff.map(s => `<option value="${s.ID_Сотрудника}">${escapeHtml(s.ФИО)}</option>`).join('');
+  openModal('layoutBackdrop');
+}
+
+document.getElementById('layoutForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  try {
+    await Api.post(`/api/orders/${orderId}/layouts`, {
+      ID_Дизайнера: form.ID_Дизайнера.value, ФайлМакета: form.ФайлМакета.value
+    });
+    toast('Макет добавлен');
+    closeModal('layoutBackdrop');
+    form.reset();
+    load();
+  } catch (err) {
+    if (err.fields) showFieldErrors(form, err.fields);
+    else toast(err.message, 'error');
+  }
+});
+
+async function changeLayoutStatus(id, status) {
+  try {
+    await Api.patch(`/api/orders/layouts/${id}`, { Статус: status });
+    toast('Статус макета обновлён');
+  } catch (e) {
+    toast(e.message, 'error');
+    load();
+  }
+}
+
+async function deleteOrder() {
+  if (!confirm('Удалить заказ вместе с позициями, оплатами и макетами? Списанные материалы вернутся на склад. Это действие нельзя отменить.')) return;
+  try {
+    await Api.del('/api/orders/' + orderId);
+    toast('Заказ удалён');
+    location.href = 'orders.html';
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+load();
+</script>
+</body>
+</html>
+

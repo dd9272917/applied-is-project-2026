@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Заказчики — АРМ Фотоцентр</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/workspace.css">
+</head>
+<body>
+<div class="app-shell" id="app-shell"></div>
+
+<div class="modal-backdrop hidden" id="modalBackdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Новый заказчик</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <form id="clientForm">
+      <div class="modal-body">
+        <input type="hidden" name="id">
+        <div class="form-group">
+          <label for="fio">ФИО *</label>
+          <input type="text" id="fio" name="ФИО" placeholder="Иванов Иван Иванович">
+          <div class="field-error"></div>
+        </div>
+        <div class="form-group">
+          <label for="phone">Телефон</label>
+          <input type="tel" id="phone" name="Телефон" placeholder="+7 900 000-00-00">
+          <div class="field-error"></div>
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="Email" placeholder="client@mail.ru">
+          <div class="field-error"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal()">Отмена</button>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+renderShell('clients.html', 'Заказчики');
+
+let clients = [];
+
+async function load(query = '') {
+  const content = document.getElementById('page-content');
+  content.innerHTML = renderShellHtml('<div class="empty-state">Загрузка…</div>', query);
+  try {
+    clients = await Api.get('/api/clients?q=' + encodeURIComponent(query));
+    content.innerHTML = renderShellHtml(renderTable(), query);
+    bindToolbar();
+  } catch (e) {
+    content.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderShellHtml(inner, query = '') {
+  return `
+    <div class="card">
+      <div class="table-toolbar">
+        <div class="search-box">
+          <span class="icon">&#128269;</span>
+          <input type="text" id="searchInput" placeholder="Поиск по ФИО, телефону, email" value="${escapeHtml(query)}">
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">+ Новый заказчик</button>
+      </div>
+      ${inner}
+    </div>`;
+}
+
+function renderTable() {
+  if (!clients.length) return '<div class="empty-state">Заказчики не найдены</div>';
+  const rows = clients.map(c => `
+    <tr>
+      <td>${escapeHtml(c.ФИО)}</td>
+      <td>${escapeHtml(c.Телефон || '—')}</td>
+      <td>${escapeHtml(c.Email || '—')}</td>
+      <td class="actions">
+        <button class="btn btn-sm" onclick='openModal(${escapeHtml(JSON.stringify(c))})'>Изменить</button>
+        <button class="btn btn-sm btn-danger" onclick="remove(${c.ID_Заказчика})">Удалить</button>
+      </td>
+    </tr>`).join('');
+  return `<table><thead><tr><th>ФИО</th><th>Телефон</th><th>Email</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function bindToolbar() {
+  const input = document.getElementById('searchInput');
+  let t;
+  input.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => load(input.value), 300);
+  });
+}
+
+function openModal(client) {
+  const form = document.getElementById('clientForm');
+  form.reset();
+  showFieldErrors(form, null);
+  document.getElementById('modalTitle').textContent = client ? 'Изменить заказчика' : 'Новый заказчик';
+  form.elements.namedItem('id').value = client ? client.ID_Заказчика : '';
+  if (client) {
+    form.ФИО.value = client.ФИО;
+    form.Телефон.value = client.Телефон || '';
+    form.Email.value = client.Email || '';
+  }
+  document.getElementById('modalBackdrop').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modalBackdrop').classList.add('hidden'); }
+
+document.getElementById('clientForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const id = form.elements.namedItem('id').value;
+  const payload = { ФИО: form.ФИО.value.trim(), Телефон: form.Телефон.value.trim(), Email: form.Email.value.trim() };
+  try {
+    if (id) await Api.put('/api/clients/' + id, payload);
+    else await Api.post('/api/clients', payload);
+    toast(id ? 'Заказчик обновлён' : 'Заказчик добавлен');
+    closeModal();
+    load(document.getElementById('searchInput')?.value || '');
+  } catch (err) {
+    if (err.fields) showFieldErrors(form, err.fields);
+    else toast(err.message, 'error');
+  }
+});
+
+async function remove(id) {
+  if (!confirm('Удалить заказчика?')) return;
+  try {
+    await Api.del('/api/clients/' + id);
+    toast('Заказчик удалён');
+    load();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+load();
+</script>
+</body>
+</html>
+

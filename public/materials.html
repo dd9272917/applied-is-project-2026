@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Материалы — АРМ Фотоцентр</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/workspace.css">
+</head>
+<body>
+<div class="app-shell" id="app-shell"></div>
+
+<div class="modal-backdrop hidden" id="modalBackdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Новый материал</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <form id="materialForm">
+      <div class="modal-body">
+        <input type="hidden" name="id">
+        <div class="form-group">
+          <label>Название *</label>
+          <input type="text" name="Название" placeholder="Фотобумага 10x15">
+          <div class="field-error"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ед. измерения *</label>
+            <input type="text" name="ЕдиницаИзм" placeholder="лист / шт">
+            <div class="field-error"></div>
+          </div>
+          <div class="form-group">
+            <label>Начальный остаток *</label>
+            <input type="number" name="Остаток" min="0" step="1">
+            <div class="field-error"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal()">Отмена</button>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop hidden" id="stockBackdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Изменить остаток</h2>
+      <button class="modal-close" onclick="closeStockModal()">&times;</button>
+    </div>
+    <form id="stockForm">
+      <div class="modal-body">
+        <input type="hidden" name="id">
+        <p class="text-muted" id="stockCurrentText" style="margin-top:0;"></p>
+        <div class="form-group">
+          <label>Изменение (+ поступление / - списание) *</label>
+          <input type="number" name="Дельта" step="1" placeholder="например 100 или -20">
+          <div class="field-error"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeStockModal()">Отмена</button>
+        <button type="submit" class="btn btn-primary">Применить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+renderShell('materials.html', 'Материалы');
+let materials = [];
+
+async function load() {
+  const content = document.getElementById('page-content');
+  content.innerHTML = '<div class="empty-state">Загрузка…</div>';
+  try {
+    materials = await Api.get('/api/materials');
+    render();
+  } catch (e) {
+    content.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function render() {
+  const content = document.getElementById('page-content');
+  const rows = materials.map(m => `
+    <tr>
+      <td>${escapeHtml(m.Название)}</td>
+      <td>${escapeHtml(m.ЕдиницаИзм)}</td>
+      <td class="num">${m.Остаток} ${m.НизкийОстаток ? '<span class="badge badge-yellow">мало</span>' : ''}</td>
+      <td class="actions">
+        <button class="btn btn-sm" onclick='openStockModal(${escapeHtml(JSON.stringify(m))})'>Остаток +/-</button>
+        <button class="btn btn-sm" onclick='openModal(${escapeHtml(JSON.stringify(m))})'>Изменить</button>
+        <button class="btn btn-sm btn-danger" onclick="remove(${m.ID_Материала})">Удалить</button>
+      </td>
+    </tr>`).join('');
+
+  content.innerHTML = `
+    <div class="card">
+      <div class="table-toolbar">
+        <div></div>
+        <button class="btn btn-primary" onclick="openModal()">+ Новый материал</button>
+      </div>
+      ${materials.length ? `<table><thead><tr><th>Название</th><th>Ед. изм.</th><th>Остаток</th><th></th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="empty-state">Материалы не добавлены</div>'}
+    </div>`;
+}
+
+function openModal(m) {
+  const form = document.getElementById('materialForm');
+  form.reset();
+  showFieldErrors(form, null);
+  document.getElementById('modalTitle').textContent = m ? 'Изменить материал' : 'Новый материал';
+  form.elements.namedItem('id').value = m ? m.ID_Материала : '';
+  if (m) { form.Название.value = m.Название; form.ЕдиницаИзм.value = m.ЕдиницаИзм; form.Остаток.value = m.Остаток; }
+  document.getElementById('modalBackdrop').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modalBackdrop').classList.add('hidden'); }
+
+document.getElementById('materialForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const id = form.elements.namedItem('id').value;
+  const payload = { Название: form.Название.value.trim(), ЕдиницаИзм: form.ЕдиницаИзм.value.trim(), Остаток: form.Остаток.value };
+  try {
+    if (id) await Api.put('/api/materials/' + id, payload);
+    else await Api.post('/api/materials', payload);
+    toast(id ? 'Материал обновлён' : 'Материал добавлен');
+    closeModal();
+    load();
+  } catch (err) {
+    if (err.fields) showFieldErrors(form, err.fields);
+    else toast(err.message, 'error');
+  }
+});
+
+function openStockModal(m) {
+  const form = document.getElementById('stockForm');
+  form.reset();
+  showFieldErrors(form, null);
+  form.elements.namedItem('id').value = m.ID_Материала;
+  document.getElementById('stockCurrentText').textContent = `${m.Название}: текущий остаток ${m.Остаток} ${m.ЕдиницаИзм}`;
+  document.getElementById('stockBackdrop').classList.remove('hidden');
+}
+function closeStockModal() { document.getElementById('stockBackdrop').classList.add('hidden'); }
+
+document.getElementById('stockForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  try {
+    await Api.patch(`/api/materials/${form.elements.namedItem('id').value}/stock`, { Дельта: form.Дельта.value });
+    toast('Остаток обновлён');
+    closeStockModal();
+    load();
+  } catch (err) {
+    if (err.fields) showFieldErrors(form, err.fields);
+    else toast(err.message, 'error');
+  }
+});
+
+async function remove(id) {
+  if (!confirm('Удалить материал?')) return;
+  try {
+    await Api.del('/api/materials/' + id);
+    toast('Материал удалён');
+    load();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+load();
+</script>
+</body>
+</html>
+

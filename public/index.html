@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#173d30">
+<title>Обзор — Фотоцентр</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/workspace.css">
+</head>
+<body>
+<div class="app-shell" id="app-shell"></div>
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+renderShell('index.html', 'Обзор');
+const STAGES = ['Новый', 'В дизайне', 'В печати', 'Готов', 'Выдан'];
+const COLORS = ['#82a29b', '#a69abd', '#c7a562', '#7eaa71', '#a1aaa0'];
+async function load() {
+  const content = document.getElementById('page-content');
+  content.innerHTML = '<div class="stat-grid" aria-label="Загрузка данных" aria-busy="true">' + '<div class="skeleton"></div>'.repeat(4) + '</div>';
+  try { render(await Api.get('/api/dashboard')); }
+  catch (e) {
+    content.innerHTML = `<div class="dashboard-welcome"><div><strong>Ваше рабочее пространство готово</strong><p>Управляйте заказами, клиентами и печатью из одного места.</p></div><a class="btn" href="services.html">Каталог услуг ${icon('arrow')}</a></div><div class="error-panel" role="alert"><h2>Не удалось загрузить данные</h2><p>${escapeHtml(e.message)}</p><button class="btn btn-primary" onclick="load()">Повторить загрузку</button></div>`;
+  }
+}
+function render(data) {
+  const ready = data.orders.filter(o => o.Статус === 'Готов').length;
+  const metrics = [
+    { label: 'Заказы в работе', value: data.ordersInWork, note: 'От идеи до готового тиража', icon: 'orders' },
+    { label: 'Выручка сегодня', value: money(data.revenueToday), note: 'Оплаты за текущий день', icon: 'wallet' },
+    { label: 'Готовы к выдаче', value: ready, note: 'Ждут встречи с заказчиком', icon: 'check' },
+    { label: 'Всего заказов', value: data.orders.length, note: 'Вся история вашего фотоцентра', icon: 'box' }
+  ];
+  const stats = metrics.map(m => `<div class="card stat-card"><div class="stat-top"><span class="label">${m.label}</span><span class="stat-symbol">${icon(m.icon)}</span></div><div class="value">${m.value}</div><div class="stat-foot">${m.note}</div></div>`).join('');
+  const columns = STAGES.map((stage, i) => {
+    const items = data.orders.filter(o => o.Статус === stage);
+    return `<section class="kanban-col" style="--stage:${COLORS[i]}"><div class="kanban-col-header"><span class="stage-title"><span class="stage-dot"></span>${stage}</span><span class="count">${items.length}</span></div>${items.length ? items.map(o => `<a class="kanban-card" href="order-detail.html?id=${encodeURIComponent(o.ID_Заказа)}"><div class="order-id">ЗАКАЗ №${escapeHtml(o.ID_Заказа)}<span>↗</span></div><div class="client">${escapeHtml(o.Заказчик)}</div><div class="sum">${money(o.Сумма)}</div><div class="order-date">${escapeHtml(formatDate(o.ДатаСоздания))}</div></a>`).join('') : '<div class="kanban-empty">Здесь пока нет заказов</div>'}</section>`;
+  }).join('');
+  const recent = data.orders.slice(0, 4).map(o => `<a class="recent-order" href="order-detail.html?id=${encodeURIComponent(o.ID_Заказа)}"><span class="client-avatar">${escapeHtml(String(o.Заказчик || 'К').split(' ').filter(Boolean).slice(0,2).map(w => w[0]).join(''))}</span><span class="recent-info"><strong>${escapeHtml(o.Заказчик)}</strong><small>Заказ №${escapeHtml(o.ID_Заказа)} · ${escapeHtml(formatDate(o.ДатаСоздания))}</small></span>${statusBadge(o.Статус)}<span class="recent-sum">${money(o.Сумма)}</span></a>`).join('');
+  const stock = data.lowStock.slice(0, 4).map(m => `<div class="stock-row"><div class="stock-heading"><span>${escapeHtml(m.Название)}</span><span>${escapeHtml(m.Остаток)} ${escapeHtml(m.ЕдиницаИзм)}</span></div><div class="stock-track"><span style="width:${Math.max(0, Math.min(100, Number(m.Остаток) / 20 * 100))}%"></span></div></div>`).join('');
+  document.getElementById('page-content').innerHTML = `
+    <div class="stat-grid">${stats}</div>
+    <div class="dashboard-welcome"><div><strong>Идеи становятся реальностью — заказ за заказом.</strong><p>${ready ? `Готовых заказов к выдаче: ${ready}. Самое время порадовать клиентов.` : 'Создайте новый заказ, а мы поможем держать всё в порядке.'}</p></div><a class="btn" href="orders.html?new=1">${icon('plus')} Новый заказ</a></div>
+    <div class="dashboard-toolbar"><div><h2>Производство в движении</h2><p>Каждый заказ — на своём этапе</p></div><div class="dashboard-actions"><a class="subtle-link" href="orders.html">Все заказы ${icon('arrow')}</a><button class="btn" onclick="load()">Обновить</button></div></div>
+    <div class="kanban">${columns}</div>
+    <div class="dashboard-bottom"><section class="card"><div class="card-header"><h2>Последние заказы</h2><a class="subtle-link" href="orders.html">Все заказы ↗</a></div>${recent || '<div class="empty-state">Здесь появятся ваши первые заказы</div>'}</section><section class="card"><div class="card-header"><h2>Внимание к запасам</h2><a class="subtle-link" href="materials.html">На склад ↗</a></div>${stock || '<div class="empty-state">Всё в порядке. Материалов достаточно.</div>'}${data.lowStock.length ? `<div class="stock-note">Материалов на исходе: ${data.lowStock.length}. Проверьте остатки перед печатью.</div>` : ''}</section></div>`;
+}
+load();
+</script>
+</body>
+</html>

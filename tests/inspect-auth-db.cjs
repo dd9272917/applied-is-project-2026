@@ -1,0 +1,2 @@
+const {poolPromise}=require('../db');
+(async()=>{let pool;try{pool=await poolPromise;const r=await pool.request().query("SELECT COLUMN_NAME,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME=N'Сотрудник' ORDER BY ORDINAL_POSITION");console.log(JSON.stringify(r.recordset));}catch(e){console.error('DIAGNOSIS',e.code,e.number,e.message);process.exitCode=1;}finally{if(pool)await pool.close();}})();

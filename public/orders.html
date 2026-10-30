@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Заказы — АРМ Фотоцентр</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/workspace.css">
+</head>
+<body>
+<div class="app-shell" id="app-shell"></div>
+
+<div class="modal-backdrop hidden" id="modalBackdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Новый заказ</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <form id="orderForm">
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Заказчик *</label>
+          <select name="ID_Заказчика" id="clientSelect"></select>
+          <div class="field-error"></div>
+          <div class="hint">Нет нужного заказчика? Добавьте его на странице «Заказчики».</div>
+        </div>
+        <div class="form-group">
+          <label>Сотрудник, оформляющий заказ *</label>
+          <select name="ID_Сотрудника" id="staffSelect" disabled></select><div class="hint">Заказ будет оформлен от имени вошедшего сотрудника.</div>
+          <div class="field-error"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal()">Отмена</button>
+        <button type="submit" class="btn btn-primary">Создать заказ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+renderShell('orders.html', 'Заказы');
+
+const STATUSES = ['Новый', 'В дизайне', 'В печати', 'Готов', 'Выдан'];
+let orders = [];
+
+async function load(status = '', q = '') {
+  const content = document.getElementById('page-content');
+  content.innerHTML = shellHtml('<div class="empty-state">Загрузка…</div>', status, q);
+  try {
+    const params = new URLSearchParams();
+    if (status) params.set('status', status);
+    if (q) params.set('q', q);
+    orders = await Api.get('/api/orders?' + params.toString());
+    content.innerHTML = shellHtml(renderTable(), status, q);
+    bindToolbar();
+  } catch (e) {
+    content.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function shellHtml(inner, status, q) {
+  const options = ['<option value="">Все статусы</option>']
+    .concat(STATUSES.map(s => `<option value="${s}" ${s === status ? 'selected' : ''}>${s}</option>`)).join('');
+  return `
+    <div class="card">
+      <div class="table-toolbar">
+        <div style="display:flex;gap:10px;">
+          <div class="search-box">
+            <span class="icon">&#128269;</span>
+            <input type="text" id="searchInput" placeholder="Поиск по заказчику или № заказа" value="${escapeHtml(q)}">
+          </div>
+          <select id="statusFilter" style="width:170px;">${options}</select>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">+ Новый заказ</button>
+      </div>
+      ${inner}
+    </div>`;
+}
+
+function renderTable() {
+  if (!orders.length) return '<div class="empty-state">Заказы не найдены</div>';
+  const rows = orders.map(o => `
+    <tr class="row-clickable" onclick="location.href='order-detail.html?id=${o.ID_Заказа}'">
+      <td>№ ${o.ID_Заказа}</td>
+      <td>${escapeHtml(o.Заказчик)}</td>
+      <td>${escapeHtml(o.Сотрудник)}</td>
+      <td>${formatDate(o.ДатаСоздания)}</td>
+      <td>${statusBadge(o.Статус)}</td>
+      <td class="num">${money(o.Сумма)}</td>
+      <td>${paymentBadge(o)}</td>
+    </tr>`).join('');
+  return `<table>
+    <thead><tr><th>№</th><th>Заказчик</th><th>Сотрудник</th><th>Дата</th><th>Статус</th><th>Сумма</th><th>Оплата</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+function bindToolbar() {
+  const input = document.getElementById('searchInput');
+  const status = document.getElementById('statusFilter');
+  let t;
+  input.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => load(status.value, input.value), 300);
+  });
+  status.addEventListener('change', () => load(status.value, input.value));
+}
+
+async function openModal() {
+  const form = document.getElementById('orderForm');
+  form.reset();
+  showFieldErrors(form, null);
+  try {
+    const [clients, user] = await Promise.all([Api.get('/api/clients'), getCurrentUser()]);
+    document.getElementById('clientSelect').innerHTML = clients.map(c => `<option value="${c.ID_Заказчика}">${escapeHtml(c.ФИО)}</option>`).join('');
+    document.getElementById('staffSelect').innerHTML = `<option value="${user.ID_Сотрудника}">${escapeHtml(user.ФИО)}</option>`;
+    const cur = currentStaffId();
+    if (cur) document.getElementById('staffSelect').value = cur;
+    document.getElementById('modalBackdrop').classList.remove('hidden');
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+function closeModal() { document.getElementById('modalBackdrop').classList.add('hidden'); }
+
+document.getElementById('orderForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const payload = { ID_Заказчика: form.ID_Заказчика.value };
+  try {
+    const order = await Api.post('/api/orders', payload);
+    toast('Заказ создан');
+    location.href = 'order-detail.html?id=' + order.ID_Заказа;
+  } catch (err) {
+    if (err.fields) showFieldErrors(form, err.fields);
+    else toast(err.message, 'error');
+  }
+});
+
+load();
+if (new URLSearchParams(location.search).get('new') === '1') openModal();
+</script>
+</body>
+</html>
+
+
