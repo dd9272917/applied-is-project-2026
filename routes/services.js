@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const asyncHandler = require('../utils/asyncHandler');
 const AppError = require('../utils/AppError');
-const { parseService } = require('../schemas/service');
+const { parseService, parseServiceFilters } = require('../schemas/service');
 
 function createServicesRouter(repository) {
   const router = Router();
@@ -14,12 +14,16 @@ function createServicesRouter(repository) {
     next();
   });
   function validate(req, res, next) {
-    const parsed = parseService(req.body);
+    const parsed = parseService(req.body, { partial: req.method === 'PATCH' });
     if (parsed.fields) return res.status(422).json({ error: true, message: 'Проверьте входные данные', fields: parsed.fields });
     req.serviceInput = parsed.value;
     next();
   }
-  router.get('/', asyncHandler(async (req, res) => res.json(await repository.list())));
+  router.get('/', asyncHandler(async (req, res) => {
+    const parsed = parseServiceFilters(req.query);
+    if (parsed.fields) return res.status(422).json({ error: true, message: 'Проверьте параметры фильтра', fields: parsed.fields });
+    res.json(await repository.list(parsed.value));
+  }));
   router.get('/:id', asyncHandler(async (req, res) => {
     const service = await repository.findById(req.serviceId);
     if (!service) throw new AppError(404, 'Услуга не найдена');
@@ -31,6 +35,11 @@ function createServicesRouter(repository) {
   }));
   router.put('/:id', validate, asyncHandler(async (req, res) => {
     const service = await repository.update(req.serviceId, req.serviceInput);
+    if (!service) throw new AppError(404, 'Услуга не найдена');
+    res.json(service);
+  }));
+  router.patch('/:id', validate, asyncHandler(async (req, res) => {
+    const service = await repository.patch(req.serviceId, req.serviceInput);
     if (!service) throw new AppError(404, 'Услуга не найдена');
     res.json(service);
   }));

@@ -8,8 +8,25 @@ function createServicesRepository({ getPool, sql }) {
       .input('Цена', sql.Decimal(10, 2), service.Цена);
   }
   return {
-    async list() {
-      return (await (await request()).query(`SELECT ${fields} FROM Услуга ORDER BY Тип, Название`)).recordset;
+    async list(filters = {}) {
+      const query = await request(), where = [];
+      if (filters.search !== undefined) {
+        const literal = filters.search.replace(/[~%_\[]/g, char => '~' + char);
+        query.input('search', sql.NVarChar(302), '%' + literal + '%');
+        where.push("Название LIKE @search ESCAPE N'~'");
+      }
+      if (filters.type !== undefined) {
+        query.input('type', sql.NVarChar(50), filters.type);
+        where.push('Тип=@type');
+      }
+      for (const [key, operator] of [['min_price', '>='], ['max_price', '<=']]) {
+        if (filters[key] !== undefined) {
+          query.input(key, sql.Decimal(10, 2), filters[key]);
+          where.push(`Цена ${operator} @${key}`);
+        }
+      }
+      return (await query.query(`SELECT ${fields} FROM Услуга
+        ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY Тип, Название`)).recordset;
     },
     async findById(id) {
       return (await (await request()).input('id', sql.Int, id)
@@ -23,6 +40,16 @@ function createServicesRepository({ getPool, sql }) {
       return (await values(await request(), service).input('id', sql.Int, id)
         .query(`UPDATE Услуга SET Название=@Название, Тип=@Тип, Цена=@Цена
           OUTPUT INSERTED.* WHERE ID_Услуги=@id`)).recordset[0];
+    },
+    async patch(id, changes) {
+      // Имена столбцов берутся только из списка кода, а значения — из параметров.
+      const columns = ['Название', 'Тип', 'Цена'].filter(key => Object.hasOwn(changes, key));
+      if (!columns.length) throw new Error('No fields supplied for patch');
+      const query = (await request()).input('id', sql.Int, id);
+      const types = { Название: sql.NVarChar(150), Тип: sql.NVarChar(50), Цена: sql.Decimal(10, 2) };
+      for (const key of columns) query.input(key, types[key], changes[key]);
+      return (await query.query(`UPDATE Услуга SET ${columns.map(key => `[${key}]=@${key}`).join(', ')}
+        OUTPUT INSERTED.* WHERE ID_Услуги=@id`)).recordset[0];
     },
     async remove(id) {
       const result = await (await request()).input('id', sql.Int, id)

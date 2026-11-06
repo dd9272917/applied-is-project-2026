@@ -8,7 +8,9 @@
     "dev": "nodemon server.js",
     "lab3": "node scripts/start-lab3.cjs",
     "lab3:check": "node scripts/verify-lab3.cjs",
-    "test": "node --test tests/auth.test.cjs tests/services.test.cjs"
+    "lab4": "node scripts/start-lab3.cjs",
+    "lab4:check": "node scripts/verify-lab4.cjs",
+    "test": "node --test tests/auth.test.cjs tests/services.test.cjs tests/services-lab4.test.cjs"
   },
   "dependencies": {
     "cors": "^2.8.5",

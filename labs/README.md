@@ -1,6 +1,7 @@
 # Лабораторные работы 1 и 2
 
 Лабораторная работа №3: [инструкция по REST API и Swagger](LAB3.md).
+Лабораторная работа №4: [PATCH, DELETE и фильтрация услуг](LAB4.md).
 
 Тема: АРМ фотоцентра и полиграфических услуг. Стек: Node.js, Express, Microsoft SQL Server, HTML/CSS/JavaScript.
 

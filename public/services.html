@@ -53,15 +53,21 @@
 <script>
 renderShell('services.html', 'Каталог услуг');
 let services = [];
+let serviceFilters = { search: '', min_price: '', max_price: '', type: '' };
+let filterError = '';
 
 async function load() {
   const content = document.getElementById('page-content');
   content.innerHTML = '<div class="empty-state">Загрузка…</div>';
   try {
-    services = await Api.get('/api/services');
+    const query = new URLSearchParams(Object.entries(serviceFilters).filter(([, value]) => value.trim() !== ''));
+    services = await Api.get('/api/services' + (query.size ? '?' + query : ''));
+    filterError = '';
     render();
   } catch (e) {
-    content.innerHTML = `<div class="alert alert-error">${escapeHtml(e.message)}</div>`;
+    filterError = e.fields ? Object.values(e.fields).join('. ') : e.message;
+    services = [];
+    render();
   }
 }
 
@@ -105,11 +111,32 @@ function render() {
     </div>`).join('');
 
   content.innerHTML = `
+    <form id="servicesFilterForm" class="card" role="search" style="padding:16px;margin-bottom:16px;">
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:end;">
+        <div class="form-group" style="flex:2;min-width:180px;margin:0;"><label for="serviceSearch">Поиск по названию</label><input id="serviceSearch" name="search" maxlength="150" value="${escapeHtml(serviceFilters.search)}" placeholder="Например, фото"></div>
+        <div class="form-group" style="flex:1;min-width:140px;margin:0;"><label for="serviceType">Тип услуги</label><input id="serviceType" name="type" maxlength="50" value="${escapeHtml(serviceFilters.type)}" placeholder="Все типы"></div>
+        <div class="form-group" style="width:120px;margin:0;"><label for="serviceMin">Цена от, ₸</label><input id="serviceMin" name="min_price" type="number" min="0" max="99999999.99" step="0.01" value="${escapeHtml(serviceFilters.min_price)}"></div>
+        <div class="form-group" style="width:120px;margin:0;"><label for="serviceMax">Цена до, ₸</label><input id="serviceMax" name="max_price" type="number" min="0" max="99999999.99" step="0.01" value="${escapeHtml(serviceFilters.max_price)}"></div>
+        <button type="submit" class="btn btn-primary">Найти</button><button type="reset" class="btn">Сбросить</button>
+      </div>
+      ${filterError ? `<div class="alert alert-error" role="alert" style="margin-top:12px;">${escapeHtml(filterError)}</div>` : ''}
+    </form>
     <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
       <button class="btn btn-primary" onclick="openModal()">+ Новая услуга</button>
     </div>
-    ${cards || '<div class="empty-state">Услуги не добавлены</div>'}
+    ${cards || '<div class="empty-state">Подходящие услуги не найдены</div>'}
   `;
+  const filterForm = document.getElementById('servicesFilterForm');
+  filterForm.addEventListener('submit', event => {
+    event.preventDefault();
+    serviceFilters = Object.fromEntries(new FormData(filterForm));
+    load();
+  });
+  filterForm.addEventListener('reset', event => {
+    event.preventDefault();
+    serviceFilters = { search: '', min_price: '', max_price: '', type: '' };
+    load();
+  });
 }
 
 function openModal(s) {

@@ -1,0 +1,789 @@
+{
+  "date": "2026-11-06T06:16:31.565Z",
+  "database": "PhotoCenterLab12",
+  "passed": true,
+  "checks": 54,
+  "originalServicesUnchanged": true,
+  "temporaryServicesRemoved": true,
+  "results": [
+    {
+      "method": "PATCH",
+      "url": "/api/services/1",
+      "expected": 401,
+      "actual": 401,
+      "request": {
+        "Цена": 25
+      },
+      "response": {
+        "error": true,
+        "message": "Войдите в систему, чтобы продолжить."
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 201,
+      "actual": 201,
+      "request": {
+        "Название": "ЛР4-c93c227c фото",
+        "Тип": "ЛР4-c93c227c",
+        "Цена": 10
+      },
+      "response": {
+        "ID_Услуги": 12,
+        "Название": "ЛР4-c93c227c фото",
+        "Тип": "ЛР4-c93c227c",
+        "Цена": 10
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 201,
+      "actual": 201,
+      "request": {
+        "Название": "ЛР4-c93c227c ламинация",
+        "Тип": "ЛР4-c93c227c",
+        "Цена": 30
+      },
+      "response": {
+        "ID_Услуги": 13,
+        "Название": "ЛР4-c93c227c ламинация",
+        "Тип": "ЛР4-c93c227c",
+        "Цена": 30
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 201,
+      "actual": 201,
+      "request": {
+        "Название": "ЛР4-c93c227c 100%_[~",
+        "Тип": "ЛР4-c93c227c",
+        "Цена": 50
+      },
+      "response": {
+        "ID_Услуги": 14,
+        "Название": "ЛР4-c93c227c 100%_[~",
+        "Тип": "ЛР4-c93c227c",
+        "Цена": 50
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?search=%D0%9B%D0%A04-c93c227c",
+      "expected": 200,
+      "actual": 200,
+      "response": [
+        {
+          "ID_Услуги": 14,
+          "Название": "ЛР4-c93c227c 100%_[~",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 50
+        },
+        {
+          "ID_Услуги": 13,
+          "Название": "ЛР4-c93c227c ламинация",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 30
+        },
+        {
+          "ID_Услуги": 12,
+          "Название": "ЛР4-c93c227c фото",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 10
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?search=%D0%9B%D0%A04-c93c227c&min_price=10&max_price=30",
+      "expected": 200,
+      "actual": 200,
+      "response": [
+        {
+          "ID_Услуги": 13,
+          "Название": "ЛР4-c93c227c ламинация",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 30
+        },
+        {
+          "ID_Услуги": 12,
+          "Название": "ЛР4-c93c227c фото",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 10
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?search=%D0%9B%D0%A04-c93c227c&min_price=30&max_price=30",
+      "expected": 200,
+      "actual": 200,
+      "response": [
+        {
+          "ID_Услуги": 13,
+          "Название": "ЛР4-c93c227c ламинация",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 30
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?search=%D0%9B%D0%A04-c93c227c&min_price=0&max_price=9.99",
+      "expected": 200,
+      "actual": 200,
+      "response": []
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?type=%D0%9B%D0%A04-c93c227c",
+      "expected": 200,
+      "actual": 200,
+      "response": [
+        {
+          "ID_Услуги": 14,
+          "Название": "ЛР4-c93c227c 100%_[~",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 50
+        },
+        {
+          "ID_Услуги": 13,
+          "Название": "ЛР4-c93c227c ламинация",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 30
+        },
+        {
+          "ID_Услуги": 12,
+          "Название": "ЛР4-c93c227c фото",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 10
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?search=%25&type=%D0%9B%D0%A04-c93c227c",
+      "expected": 200,
+      "actual": 200,
+      "response": [
+        {
+          "ID_Услуги": 14,
+          "Название": "ЛР4-c93c227c 100%_[~",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 50
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?search=_&type=%D0%9B%D0%A04-c93c227c",
+      "expected": 200,
+      "actual": 200,
+      "response": [
+        {
+          "ID_Услуги": 14,
+          "Название": "ЛР4-c93c227c 100%_[~",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 50
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?search=%5B&type=%D0%9B%D0%A04-c93c227c",
+      "expected": 200,
+      "actual": 200,
+      "response": [
+        {
+          "ID_Услуги": 14,
+          "Название": "ЛР4-c93c227c 100%_[~",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 50
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?search=%7E&type=%D0%9B%D0%A04-c93c227c",
+      "expected": 200,
+      "actual": 200,
+      "response": [
+        {
+          "ID_Услуги": 14,
+          "Название": "ЛР4-c93c227c 100%_[~",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 50
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?search=%27+OR+1%3D1--&type=%D0%9B%D0%A04-c93c227c",
+      "expected": 200,
+      "actual": 200,
+      "response": []
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?min_price=10&max_price=30",
+      "expected": 200,
+      "actual": 200,
+      "response": [
+        {
+          "ID_Услуги": 13,
+          "Название": "ЛР4-c93c227c ламинация",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 30
+        },
+        {
+          "ID_Услуги": 12,
+          "Название": "ЛР4-c93c227c фото",
+          "Тип": "ЛР4-c93c227c",
+          "Цена": 10
+        },
+        {
+          "ID_Услуги": 7,
+          "Название": "Учебная печать A5",
+          "Тип": "Печать документов",
+          "Цена": 25
+        },
+        {
+          "ID_Услуги": 1,
+          "Название": "Печать фото 10x15",
+          "Тип": "Фотопечать",
+          "Цена": 15
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?min_price=30&max_price=10",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "Проверьте параметры фильтра",
+        "fields": {
+          "min_price": "Минимальная цена не должна превышать максимальную"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?min_price=-1",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "Проверьте параметры фильтра",
+        "fields": {
+          "min_price": "Ожидается цена от 0 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?max_price=oops",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "Проверьте параметры фильтра",
+        "fields": {
+          "max_price": "Ожидается цена от 0 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?min_price=",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "Проверьте параметры фильтра",
+        "fields": {
+          "min_price": "Ожидается цена от 0 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?max_price=100000000",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "Проверьте параметры фильтра",
+        "fields": {
+          "max_price": "Ожидается цена от 0 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?min_price=1.001",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "Проверьте параметры фильтра",
+        "fields": {
+          "min_price": "Ожидается цена от 0 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?min_price=Infinity",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "Проверьте параметры фильтра",
+        "fields": {
+          "min_price": "Ожидается цена от 0 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?search[x]=y",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "Проверьте параметры фильтра",
+        "fields": {
+          "search": "Ожидается одна строка длиной до 150 символов"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?type[]=a&type[]=b",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "Проверьте параметры фильтра",
+        "fields": {
+          "type": "Ожидается одна строка длиной до 50 символов"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?min_price=1&min_price=2",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "Проверьте параметры фильтра",
+        "fields": {
+          "min_price": "Ожидается цена от 0 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?unknown=1",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "Проверьте параметры фильтра",
+        "fields": {
+          "unknown": "Неизвестный параметр фильтра"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?search=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "Проверьте параметры фильтра",
+        "fields": {
+          "search": "Ожидается одна строка длиной до 150 символов"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services?type=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "Проверьте параметры фильтра",
+        "fields": {
+          "type": "Ожидается одна строка длиной до 50 символов"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 200,
+      "actual": 200,
+      "request": {
+        "Цена": 25
+      },
+      "response": {
+        "ID_Услуги": 12,
+        "Название": "ЛР4-c93c227c фото",
+        "Тип": "ЛР4-c93c227c",
+        "Цена": 25
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services/12",
+      "expected": 200,
+      "actual": 200,
+      "response": {
+        "ID_Услуги": 12,
+        "Название": "ЛР4-c93c227c фото",
+        "Тип": "ЛР4-c93c227c",
+        "Цена": 25
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 200,
+      "actual": 200,
+      "request": {
+        "Название": "ЛР4-c93c227c новое имя"
+      },
+      "response": {
+        "ID_Услуги": 12,
+        "Название": "ЛР4-c93c227c новое имя",
+        "Тип": "ЛР4-c93c227c",
+        "Цена": 25
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 200,
+      "actual": 200,
+      "request": {
+        "Тип": "ЛР4-c93c227c2",
+        "Цена": 0.01
+      },
+      "response": {
+        "ID_Услуги": 12,
+        "Название": "ЛР4-c93c227c новое имя",
+        "Тип": "ЛР4-c93c227c2",
+        "Цена": 0.01
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 422,
+      "actual": 422,
+      "request": {},
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "body": "Передайте хотя бы одно изменяемое поле"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 422,
+      "actual": 422,
+      "request": [],
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "body": "Ожидается JSON-объект"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Цена": null
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Цена": "Цена должна быть числом от 0.01 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Название": null
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Название": "Введите непустую строку длиной до 150 символов"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Цена": -1
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Цена": "Цена должна быть числом от 0.01 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Цена": "25"
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Цена": "Цена должна быть числом от 0.01 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Цена": true
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Цена": "Цена должна быть числом от 0.01 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Цена": 1.001
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Цена": "Цена должна быть числом от 0.01 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Название": " "
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Название": "Введите непустую строку длиной до 150 символов"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Тип": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Тип": "Введите непустую строку длиной до 50 символов"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "ID_Услуги": 13
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "ID_Услуги": "Поле не допускается во входных данных"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Цена]=0;--": 1
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Цена]=0;--": "Поле не допускается во входных данных"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services/12",
+      "expected": 200,
+      "actual": 200,
+      "response": {
+        "ID_Услуги": 12,
+        "Название": "ЛР4-c93c227c новое имя",
+        "Тип": "ЛР4-c93c227c2",
+        "Цена": 0.01
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "/api/services/12",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Цена": 15
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Название": "Введите непустую строку длиной до 150 символов",
+          "Тип": "Введите непустую строку длиной до 50 символов"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/abc",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Цена": 15
+      },
+      "response": {
+        "error": true,
+        "message": "ID должен быть положительным INT",
+        "fields": {
+          "id": "Некорректный ID"
+        }
+      }
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/services/0",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "ID должен быть положительным INT",
+        "fields": {
+          "id": "Некорректный ID"
+        }
+      }
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/services/1",
+      "expected": 409,
+      "actual": 409,
+      "response": {
+        "error": true,
+        "message": "Нельзя удалить услугу — она используется в заказах"
+      }
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/services/12",
+      "expected": 204,
+      "actual": 204,
+      "response": null
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/services/12",
+      "expected": 404,
+      "actual": 404,
+      "request": {
+        "Цена": 15
+      },
+      "response": {
+        "error": true,
+        "message": "Услуга не найдена"
+      }
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/services/12",
+      "expected": 404,
+      "actual": 404,
+      "response": {
+        "error": true,
+        "message": "Услуга не найдена"
+      }
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/services/13",
+      "expected": 204,
+      "actual": 204,
+      "response": null
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/services/14",
+      "expected": 204,
+      "actual": 204,
+      "response": null
+    }
+  ]
+}

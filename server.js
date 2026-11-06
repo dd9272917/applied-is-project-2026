@@ -15,7 +15,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', service: 'photocen
 app.get('/openapi.json', (req, res) => res.json(openapi));
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi, {
   swaggerOptions: { validatorUrl: null, tryItOutEnabled: false },
-  customSiteTitle: 'Фотоцентр — лабораторная 3'
+  customSiteTitle: 'Фотоцентр — лабораторные 3 и 4'
 }));
 app.use('/api', auth.sameOrigin);
 app.use('/api/auth', require('./routes/auth'));

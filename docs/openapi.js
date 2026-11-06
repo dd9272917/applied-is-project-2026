@@ -1,4 +1,4 @@
-const { serviceInputSchema } = require('../schemas/service');
+const { serviceInputSchema, serviceUpdateSchema } = require('../schemas/service');
 const json = schema => ({ 'application/json': { schema } });
 const ref = name => ({ $ref: `#/components/schemas/${name}` });
 const error = description => ({ description, content: json(ref('Error')) });
@@ -9,7 +9,7 @@ const secured = { security: [{ sessionCookie: [] }] };
 module.exports = {
   openapi: '3.0.3',
   info: {
-    title: 'REST API фотоцентра — лабораторная работа 3', version: '1.1.0',
+    title: 'REST API фотоцентра — лабораторные работы 3 и 4', version: '1.2.0',
     description: 'Express + SQL Server. Сначала выполните POST /api/auth/login с вашей учётной записью. Браузер сохранит HttpOnly-cookie и отправит её в последующих запросах. Вручную задавать cookie через Authorize не нужно. Для учебной базы PhotoCenterLab12: lab_ivanova / demo.'
   },
   servers: [{ url: '/' }],
@@ -23,12 +23,20 @@ module.exports = {
     } },
     '/api/auth/logout': { post: { tags: ['Вход'], summary: 'Завершить сессию', responses: { 204: { description: 'Сессия завершена' } } } },
     '/api/services': {
-      get: { ...secured, tags: ['Услуги'], summary: 'Список услуг', responses: { 200: { description: 'Список услуг', content: json({ type: 'array', items: ref('Service') }) }, 401: error('Не выполнен вход') } },
+      get: { ...secured, tags: ['Услуги'], summary: 'Список услуг с поиском и фильтрацией', parameters: [
+        { name: 'search', in: 'query', description: 'Часть названия; %, _ и [ ищутся как обычные символы', schema: { type: 'string', maxLength: 150 } },
+        { name: 'min_price', in: 'query', description: 'Цена от, включительно; до двух знаков после запятой', schema: { type: 'number', minimum: 0, maximum: 99999999.99, multipleOf: 0.01 } },
+        { name: 'max_price', in: 'query', description: 'Цена до, включительно; не меньше min_price', schema: { type: 'number', minimum: 0, maximum: 99999999.99, multipleOf: 0.01 } },
+        { name: 'type', in: 'query', description: 'Тип услуги, например Фотопечать', schema: { type: 'string', maxLength: 50 } }
+      ], responses: { 200: { description: 'Список услуг, пустой массив при отсутствии совпадений', content: json({ type: 'array', items: ref('Service') }) }, 401: error('Не выполнен вход'), 422: error('Неверные фильтры или диапазон цен') } },
       post: { ...secured, tags: ['Услуги'], summary: 'Создать услугу', requestBody: input, responses: { 201: { ...service, description: 'Услуга создана', headers: { Location: { schema: { type: 'string' } } } }, 400: error('Некорректный JSON'), 401: error('Не выполнен вход'), 422: error('Ошибка валидации, включая попытку задать ID') } }
     },
     '/api/services/{id}': {
       get: { ...secured, tags: ['Услуги'], summary: 'Найти услугу по ID', parameters: [id], responses: { 200: service, 401: error('Не выполнен вход'), 404: error('Услуга не найдена'), 422: error('Некорректный ID') } },
       put: { ...secured, tags: ['Услуги'], summary: 'Изменить услугу', parameters: [id], requestBody: input, responses: { 200: service, 401: error('Не выполнен вход'), 404: error('Услуга не найдена'), 422: error('Ошибка валидации') } },
+      patch: { ...secured, tags: ['Услуги'], summary: 'Изменить только переданные поля услуги', description: 'Передайте хотя бы одно поле. Отсутствующие поля сохраняются; null и лишние поля запрещены.', parameters: [id],
+        requestBody: { required: true, content: { 'application/json': { schema: ref('ServiceUpdate'), example: { Цена: 35 } } } },
+        responses: { 200: service, 400: error('Некорректный JSON'), 401: error('Не выполнен вход'), 404: error('Услуга не найдена'), 422: error('Ошибка валидации; пустой объект или null') } },
       delete: { ...secured, tags: ['Услуги'], summary: 'Удалить неиспользуемую услугу', parameters: [id], responses: { 204: { description: 'Удалена' }, 401: error('Не выполнен вход'), 404: error('Услуга не найдена'), 409: error('Услуга используется в заказах'), 422: error('Некорректный ID') } }
     }
   },
@@ -36,6 +44,7 @@ module.exports = {
     securitySchemes: { sessionCookie: { type: 'apiKey', in: 'cookie', name: 'photocenter_session' } },
     schemas: {
       ServiceInput: serviceInputSchema,
+      ServiceUpdate: serviceUpdateSchema,
       Service: { type: 'object', required: ['ID_Услуги', 'Название', 'Тип', 'Цена'], properties: { ID_Услуги: { type: 'integer', readOnly: true }, ...serviceInputSchema.properties } },
       Error: { type: 'object', properties: { error: { type: 'boolean' }, message: { type: 'string' }, fields: { type: 'object', additionalProperties: { type: 'string' } } } }
     }
