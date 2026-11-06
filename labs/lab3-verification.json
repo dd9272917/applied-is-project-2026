@@ -1,0 +1,510 @@
+{
+  "date": "2026-11-06T05:30:16.345Z",
+  "database": "PhotoCenterLab12",
+  "passed": true,
+  "checks": 35,
+  "docs": "/docs/",
+  "temporaryServiceRemoved": true,
+  "results": [
+    {
+      "method": "GET",
+      "url": "/api/health",
+      "expected": 200,
+      "actual": 200,
+      "response": {
+        "status": "ok",
+        "service": "photocenter-api"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services",
+      "expected": 401,
+      "actual": 401,
+      "response": {
+        "error": true,
+        "message": "Войдите в систему, чтобы продолжить."
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/auth/login",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "method": "GET",
+      "url": "/api/services",
+      "expected": 200,
+      "actual": 200,
+      "response": [
+        {
+          "ID_Услуги": 2,
+          "Название": "Разработка визитки",
+          "Тип": "Дизайн",
+          "Цена": 800
+        },
+        {
+          "ID_Услуги": 3,
+          "Название": "Ламинация A4",
+          "Тип": "Полиграфия",
+          "Цена": 50
+        },
+        {
+          "ID_Услуги": 1,
+          "Название": "Печать фото 10x15",
+          "Тип": "Фотопечать",
+          "Цена": 15
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "/api/services/2",
+      "expected": 200,
+      "actual": 200,
+      "response": {
+        "ID_Услуги": 2,
+        "Название": "Разработка визитки",
+        "Тип": "Дизайн",
+        "Цена": 800
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services/2147483647",
+      "expected": 404,
+      "actual": 404,
+      "response": {
+        "error": true,
+        "message": "Услуга не найдена"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services/abc",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "ID должен быть положительным INT",
+        "fields": {
+          "id": "Некорректный ID"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services/0",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "ID должен быть положительным INT",
+        "fields": {
+          "id": "Некорректный ID"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services/-1",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "ID должен быть положительным INT",
+        "fields": {
+          "id": "Некорректный ID"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services/1.5",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "ID должен быть положительным INT",
+        "fields": {
+          "id": "Некорректный ID"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services/2147483648",
+      "expected": 422,
+      "actual": 422,
+      "response": {
+        "error": true,
+        "message": "ID должен быть положительным INT",
+        "fields": {
+          "id": "Некорректный ID"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Название": "ЛР3 временная проверка",
+        "Тип": "Печать документов",
+        "Цена": -1
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Цена": "Цена должна быть числом от 0.01 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Название": "ЛР3 временная проверка",
+        "Тип": "Печать документов",
+        "Цена": 0
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Цена": "Цена должна быть числом от 0.01 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Название": "ЛР3 временная проверка",
+        "Тип": "Печать документов",
+        "Цена": "25"
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Цена": "Цена должна быть числом от 0.01 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Название": "ЛР3 временная проверка",
+        "Тип": "Печать документов",
+        "Цена": null
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Цена": "Цена должна быть числом от 0.01 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Название": "ЛР3 временная проверка",
+        "Тип": "Печать документов",
+        "Цена": 1.001
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Цена": "Цена должна быть числом от 0.01 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Название": "ЛР3 временная проверка",
+        "Тип": "Печать документов",
+        "Цена": 100000000
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Цена": "Цена должна быть числом от 0.01 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Название": "   ",
+        "Тип": "Печать документов",
+        "Цена": 25.5
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Название": "Введите непустую строку длиной до 150 символов"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Название": 123,
+        "Тип": "Печать документов",
+        "Цена": 25.5
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Название": "Введите непустую строку длиной до 150 символов"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Название": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "Тип": "Печать документов",
+        "Цена": 25.5
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Название": "Введите непустую строку длиной до 150 символов"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Название": "ЛР3 временная проверка",
+        "Тип": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "Цена": 25.5
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Тип": "Введите непустую строку длиной до 50 символов"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 422,
+      "actual": 422,
+      "request": {
+        "Название": "ЛР3 временная проверка",
+        "Тип": "Печать документов",
+        "Цена": 25.5,
+        "ID_Услуги": 999
+      },
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "ID_Услуги": "Поле не допускается во входных данных"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 422,
+      "actual": 422,
+      "request": {},
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "Название": "Введите непустую строку длиной до 150 символов",
+          "Тип": "Введите непустую строку длиной до 50 символов",
+          "Цена": "Цена должна быть числом от 0.01 до 99999999.99 с точностью до копеек"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 422,
+      "actual": 422,
+      "request": [],
+      "response": {
+        "error": true,
+        "message": "Проверьте входные данные",
+        "fields": {
+          "body": "Ожидается JSON-объект"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 400,
+      "actual": 400,
+      "case": "malformed JSON"
+    },
+    {
+      "method": "POST",
+      "url": "/api/services",
+      "expected": 201,
+      "actual": 201,
+      "request": {
+        "Название": "ЛР3 временная проверка",
+        "Тип": "Печать документов",
+        "Цена": 25.5
+      },
+      "response": {
+        "ID_Услуги": 6,
+        "Название": "ЛР3 временная проверка",
+        "Тип": "Печать документов",
+        "Цена": 25.5
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services/6",
+      "expected": 200,
+      "actual": 200,
+      "response": {
+        "ID_Услуги": 6,
+        "Название": "ЛР3 временная проверка",
+        "Тип": "Печать документов",
+        "Цена": 25.5
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "/api/services/6",
+      "expected": 200,
+      "actual": 200,
+      "request": {
+        "Название": "ЛР3 временная проверка",
+        "Тип": "Печать документов",
+        "Цена": 30
+      },
+      "response": {
+        "ID_Услуги": 6,
+        "Название": "ЛР3 временная проверка",
+        "Тип": "Печать документов",
+        "Цена": 30
+      }
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/services/2",
+      "expected": 409,
+      "actual": 409,
+      "response": {
+        "error": true,
+        "message": "Нельзя удалить услугу — она используется в заказах"
+      }
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/services/6",
+      "expected": 204,
+      "actual": 204,
+      "response": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/services/6",
+      "expected": 404,
+      "actual": 404,
+      "response": {
+        "error": true,
+        "message": "Услуга не найдена"
+      }
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/services/6",
+      "expected": 404,
+      "actual": 404,
+      "response": {
+        "error": true,
+        "message": "Услуга не найдена"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/api/services",
+      "expected": 200,
+      "actual": 200,
+      "response": [
+        {
+          "ID_Услуги": 2,
+          "Название": "Разработка визитки",
+          "Тип": "Дизайн",
+          "Цена": 800
+        },
+        {
+          "ID_Услуги": 3,
+          "Название": "Ламинация A4",
+          "Тип": "Полиграфия",
+          "Цена": 50
+        },
+        {
+          "ID_Услуги": 1,
+          "Название": "Печать фото 10x15",
+          "Тип": "Фотопечать",
+          "Цена": 15
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "url": "/api/auth/logout",
+      "expected": 204,
+      "actual": 204
+    },
+    {
+      "method": "GET",
+      "url": "/api/services",
+      "expected": 401,
+      "actual": 401,
+      "response": {
+        "error": true,
+        "message": "Войдите в систему, чтобы продолжить."
+      }
+    }
+  ]
+}

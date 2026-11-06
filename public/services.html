@@ -137,7 +137,7 @@ document.getElementById('serviceForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const form = e.target;
   const id = form.elements.namedItem('id').value;
-  const payload = { Название: form.Название.value.trim(), Тип: form.Тип.value, Цена: form.Цена.value };
+  const payload = { Название: form.Название.value.trim(), Тип: form.Тип.value, Цена: Number(form.Цена.value) };
   try {
     if (id) await Api.put('/api/services/' + id, payload);
     else await Api.post('/api/services', payload);
