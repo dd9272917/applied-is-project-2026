@@ -1,5 +1,22 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+// Keep this HTTP security suite independent from a live SQL Server.
+const dbPath = require.resolve('../db');
+const fakePool = {
+  request() {
+    return {
+      input() { return this; },
+      async query(query) {
+        if (query.startsWith('SELECT ID_Сотрудника, ФИО, Роль, Логин, Пароль')) return { recordset: [] };
+        throw new Error(`Unexpected database query in API security test: ${query}`);
+      }
+    };
+  }
+};
+require.cache[dbPath] = {
+  id: dbPath, filename: dbPath, loaded: true,
+  exports: { sql: require('mssql'), poolPromise: Promise.resolve(fakePool) }
+};
 const app = require('../server');
 
 async function withServer(run) {
