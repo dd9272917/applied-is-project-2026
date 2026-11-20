@@ -10,7 +10,9 @@
     "lab3:check": "node scripts/verify-lab3.cjs",
     "lab4": "node scripts/start-lab3.cjs",
     "lab4:check": "node scripts/verify-lab4.cjs",
-    "test": "node --test tests/auth.test.cjs tests/services.test.cjs tests/services-lab4.test.cjs"
+    "test": "node --test tests/*.test.cjs",
+    "load": "node scripts/load-test.cjs",
+    "test:db": "node scripts/db-integration-test.cjs"
   },
   "dependencies": {
     "cors": "^2.8.5",
